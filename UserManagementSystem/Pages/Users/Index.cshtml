@@ -1,0 +1,232 @@
+﻿@page
+@model UserManagementSystem.Pages.Users.IndexModel
+
+<div class="container mt-5">
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">
+            @Model.StatusMessage
+        </div>
+    }
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="bg-info text-center text-white m-2 p-2"><h1>User Management System</h1></div>
+        <div class="mb-3 p-2 bg-light d-flex justify-content-between align-items-center">
+            <div>
+                <button type="submit" asp-page-handler="Block" class="btn btn-sm btn-success  shadow-sm m-2" title="Block Users">
+                    <i class="fas fa-lock"></i> Block
+                </button>
+                <button type="submit" asp-page-handler="Unblock" class="btn btn-sm btn-primary  shadow-sm m-2" title="Unblock Users">
+                    <i class="fas fa-unlock"></i> Unblock
+                </button>
+                <button type="submit" asp-page-handler="Delete" class="btn btn-sm btn-danger shadow-sm m-2" title="Delete Users">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </div>
+            <div class="ms-auto">
+                <input type="text" id="filterInput" class="form-control shadow-sm" placeholder="Filter...">
+            </div>
+        </div>
+
+        <table class="table table-bordered table-hover shadow-sm">
+            <thead class="table-primary">
+                <tr>
+                    <th><input type="checkbox" id="selectAll"> &nbsp; Select All</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Last Login</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-light">
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td><input type="checkbox" name="selectedUserIds" value="@user.Id"></td>
+                        <td>@user.Name</td>
+                        <td>@user.Email</td>
+                        <td data-utc-time="@(user.LastLogin.HasValue ? user.LastLogin.Value.ToUniversalTime().ToString("o") : "")"
+                            title="@(user.LastLogin.HasValue ? user.LastLogin.Value.ToString("M/d/yyyy h:mm:ss tt") : "N/A")">
+                            <div class="last-login-container">
+                                <span class="last-login-relative">
+                                    @(user.LastLogin.HasValue ? user.LastLogin.Value.ToString("M/d/yyyy h:mm tt") : "N/A")
+                                </span>
+                                <div class="last-login-bar"></div>
+                            </div>
+                        </td>
+                        <td>@user.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </form>
+</div>
+
+@section Styles {
+    <style>
+        .last-login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Ensure bar aligns to the left */
+            min-width: 120px; /* Adjust as needed for better layout */
+        }
+
+        .last-login-relative {
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        .last-login-bar {
+            height: 5px;
+            background-color: #e0e0e0; /* Default grey color for older logins or N/A */
+            margin-top: 4px; /* Space between text and bar */
+            width: 100%; /* Initial full width, will be set by JS dynamically */
+            border-radius: 2px; /* Slightly rounded corners for the bar */
+            transition: all 0.3s ease-in-out; /* Smooth transition for bar changes */
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('selectAll').addEventListener('change', function() {
+            var checkboxes = document.querySelectorAll('input[name="selectedUserIds"]');
+            for (var i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = this.checked;
+            }
+        });
+
+        document.getElementById('filterInput').addEventListener('keyup', function() {
+            var filterValue = this.value.toLowerCase();
+            var table = document.querySelector('.table tbody');
+            var rows = table.querySelectorAll('tr');
+
+            rows.forEach(function(row) {
+                var nameCell = row.cells[1].textContent.toLowerCase(); 
+                var emailCell = row.cells[2].textContent.toLowerCase();
+                var rowText = nameCell + ' ' + emailCell;
+
+                if (rowText.includes(filterValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        function formatRelativeTime(date) {
+            if (!date) return 'N/A';
+
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            if (seconds < 60) {
+                return 'less than a minute ago';
+            }
+
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) {
+                return minutes === 1 ? '1 minute ago' : minutes + ' minutes ago';
+            }
+
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) {
+                return hours === 1 ? '1 hour ago' : hours + ' hours ago';
+            }
+
+            const days = Math.floor(hours / 24);
+            if (days < 7) {
+                return days === 1 ? '1 day ago' : days + ' days ago';
+            }
+
+            const weeks = Math.floor(days / 7);
+            if (weeks < 4) {
+                return weeks === 1 ? '1 week ago' : weeks + ' weeks ago';
+            }
+
+            const months = Math.floor(days / 30.44);
+            if (months < 12) {
+                return months === 1 ? '1 month ago' : months + ' months ago';
+            }
+
+            const years = Math.floor(days / 365.25);
+            return years === 1 ? '1 year ago' : years + ' years ago';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var lastLoginCells = document.querySelectorAll('td[data-utc-time]');
+
+            lastLoginCells.forEach(function(cell) {
+                var utcTimeString = cell.getAttribute('data-utc-time');
+                var relativeTimeSpan = cell.querySelector('.last-login-relative');
+                var progressBar = cell.querySelector('.last-login-bar');
+
+                if (utcTimeString) {
+                    try {
+                        var date = new Date(utcTimeString);
+                        if (!isNaN(date.getTime())) {
+                            relativeTimeSpan.textContent = formatRelativeTime(date);
+                            const now = new Date();
+                            const diffInMs = now.getTime() - date.getTime();
+                            const oneMinute = 60 * 1000;
+                            const fifteenMinutes = 15 * oneMinute;
+                            const oneHour = 60 * oneMinute;
+                            const sixHours = 6 * oneHour;
+                            const oneDay = 24 * oneHour;
+                            const threeDays = 3 * oneDay;
+                            const oneWeek = 7 * oneDay;
+                            const oneMonth = 30 * oneDay;
+
+                            let barColor = '#e0e0e0';
+                            let barWidthPercentage = '100%';
+
+                            if (diffInMs < oneMinute) {
+                                barColor = '#32CD32';
+                                barWidthPercentage = '20%';
+                            } else if (diffInMs < fifteenMinutes) {
+                                barColor = '#00FA9A';
+                                barWidthPercentage = '40%';
+                            } else if (diffInMs < oneHour) {
+                                barColor = '#7CFC00';
+                                barWidthPercentage = '60%';
+                            } else if (diffInMs < sixHours) {
+                                barColor = '#FFD700';
+                                barWidthPercentage = '80%';
+                            } else if (diffInMs < oneDay) {
+                                barColor = '#FFA500';
+                                barWidthPercentage = '100%';
+                            } else if (diffInMs < threeDays) {
+                                barColor = '#FF8C00';
+                                barWidthPercentage = '100%';
+                            } else if (diffInMs < oneWeek) {
+                                barColor = '#FF4500';
+                                barWidthPercentage = '100%';
+                            } else if (diffInMs < oneMonth) {
+                                barColor = '#DC143C';
+                                barWidthPercentage = '100%';
+                            }
+
+                            progressBar.style.backgroundColor = barColor;
+                            progressBar.style.width = barWidthPercentage;
+
+                        } else {
+                            relativeTimeSpan.textContent = 'Invalid Date';
+                            progressBar.style.width = '0%';
+                            progressBar.style.backgroundColor = '#e0e0e0';
+                        }
+                    } catch (e) {
+                        console.error('Error formatting date:', e);
+                        relativeTimeSpan.textContent = 'Error';
+                        progressBar.style.width = '0%';
+                        progressBar.style.backgroundColor = '#e0e0e0';
+                    }
+                } else {
+                    relativeTimeSpan.textContent = 'N/A';
+                    progressBar.style.width = '0%';
+                    progressBar.style.backgroundColor = '#e0e0e0';
+                }
+            });
+        });
+    </script>
+}

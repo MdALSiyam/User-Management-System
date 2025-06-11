@@ -1,0 +1,47 @@
+﻿@page
+@model UserManagementSystem.Pages.Account.LoginModel
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="text-center mb-4">
+                <h1>THE APP</h1>
+                <p class="text-muted">Start your journey</p>
+                <h3>Sign in to The App</h3>
+            </div>
+
+            <div class="card shadow-lg">
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Message))
+                    {
+                        <div class="alert alert-danger">@Model.Message</div>
+                    }
+
+                    <form method="post">
+                        <div class="form-group mb-3">
+                            <label for="email" class="form-label"><b>E-mail</b></label>
+                            <input type="email" class="form-control" id="email" name="Email" placeholder="Enter Your Email" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="password" class="form-label"><b>Password</b></label>
+                            <input type="password" class="form-control" id="password" name="Password"  placeholder="Enter Your Password" required>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="RememberMe">
+                            <label class="form-check-label" for="rememberMe"><b>Remember me</b></label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Sign in</button>
+
+                        <div class="text-center">
+                            <a href="/Account/Register" class="d-block mb-2">Don't have an account? Sign up</a>
+                            <a href="/Account/ForgotPassword">Forgot password?</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
