@@ -10,10 +10,8 @@ using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseInMemoryDatabase("UserManagementInMemoryDb"));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
@@ -98,13 +96,18 @@ app.UseMiddleware<UserStatusMiddleware>();
 app.MapGet("/health", () => Results.Ok());
 app.MapRazorPages();
 
+// -------------------------------------------------------------
+// UPDATE 2: Database Creation & Seeding for In-Memory Database
+// -------------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.Migrate();
+        
+        context.Database.EnsureCreated();
+
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
 
         if (!userManager.Users.Any())
@@ -121,7 +124,8 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        logger.LogError(ex, "An error occurred while initializing or seeding the database.");
     }
 }
+
 app.Run();
